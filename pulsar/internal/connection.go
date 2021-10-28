@@ -43,7 +43,7 @@ const (
 	PulsarVersion       = "0.1"
 	ClientVersionString = "Pulsar Go " + PulsarVersion
 
-	PulsarProtocolVersion = int32(pb.ProtocolVersion_v13)
+	PulsarProtocolVersion = int32(pb.ProtocolVersion_v19)
 )
 
 type TLSOptions struct {
