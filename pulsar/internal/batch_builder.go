@@ -205,7 +205,7 @@ func (bc *batchContainer) Add(
 
 		bc.cmdSend.Send.SequenceId = proto.Uint64(sequenceID)
 	}
-	bc.log.Infof("Add metaSize=%d, data=%s payld=[% x]", metadata.Size(), metadata.String(), payload)
+	bc.log.Debugf("Add metaSize=%d, data=%s payld=[% x]", metadata.Size(), metadata.String(), payload)
 	addSingleMessageToBatch(bc.buffer, metadata, payload)
 
 	bc.numMessages++
