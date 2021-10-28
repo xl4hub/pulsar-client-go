@@ -85,6 +85,7 @@ func (h *keyBasedBatches) Val(key string) *batchContainer {
 // pointer. Build a new key based batch message container.
 func NewKeyBasedBatchBuilder(
 	maxMessages uint, maxBatchSize uint, producerName string, producerID uint64,
+	schemaVersion []byte,
 	compressionType pb.CompressionType, level compression.Level,
 	bufferPool BuffersPool, logger log.Logger, encryptor crypto.Encryptor,
 ) (BatchBuilder, error) {
@@ -93,6 +94,7 @@ func NewKeyBasedBatchBuilder(
 		batches: newKeyBasedBatches(),
 		batchContainer: newBatchContainer(
 			maxMessages, maxBatchSize, producerName, producerID,
+			schemaVersion,
 			compressionType, level, bufferPool, logger, encryptor,
 		),
 		compressionType: compressionType,
@@ -146,6 +148,7 @@ func (bc *keyBasedBatchContainer) Add(
 		// create batchContainer for new key
 		t := newBatchContainer(
 			bc.maxMessages, bc.maxBatchSize, bc.producerName, bc.producerID,
+			bc.schemaVersion,
 			bc.compressionType, bc.level, bc.buffersPool, bc.log, bc.encryptor,
 		)
 		batchPart = &t

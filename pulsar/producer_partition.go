@@ -75,6 +75,8 @@ type partitionProducer struct {
 	sequenceIDGenerator      *uint64
 	batchFlushTicker         *time.Ticker
 
+	schemaVersion            []byte
+
 	// Channel where app is posting messages to be published
 	eventsChan      chan interface{}
 	closeCh         chan struct{}
@@ -214,6 +216,7 @@ func (p *partitionProducer) grabCnx() error {
 	}
 
 	p.producerName = res.Response.ProducerSuccess.GetProducerName()
+	p.schemaVersion= res.Response.ProducerSuccess.GetSchemaVersion()
 
 	var encryptor internalcrypto.Encryptor
 	if p.options.Encryption != nil {
@@ -228,7 +231,8 @@ func (p *partitionProducer) grabCnx() error {
 	if p.options.DisableBatching {
 		provider, _ := GetBatcherBuilderProvider(DefaultBatchBuilder)
 		p.batchBuilder, err = provider(p.options.BatchingMaxMessages, p.options.BatchingMaxSize,
-			p.producerName, p.producerID, pb.CompressionType(p.options.CompressionType),
+			p.producerName, p.producerID, p.schemaVersion,
+			pb.CompressionType(p.options.CompressionType),
 			compression.Level(p.options.CompressionLevel),
 			p,
 			p.log,
@@ -243,7 +247,8 @@ func (p *partitionProducer) grabCnx() error {
 		}
 
 		p.batchBuilder, err = provider(p.options.BatchingMaxMessages, p.options.BatchingMaxSize,
-			p.producerName, p.producerID, pb.CompressionType(p.options.CompressionType),
+			p.producerName, p.producerID, p.schemaVersion,
+			pb.CompressionType(p.options.CompressionType),
 			compression.Level(p.options.CompressionLevel),
 			p,
 			p.log,
@@ -399,7 +404,8 @@ func (p *partitionProducer) internalSend(request *sendRequest) {
 	payload := msg.Payload
 	var schemaPayload []byte
 	var err error
-	if p.options.Schema != nil {
+	if p.options.Schema != nil && payload == nil {
+		// Only serialize Native Go Value if payload not provided.
 		schemaPayload, err = p.options.Schema.Encode(msg.Value)
 		if err != nil {
 			p.log.WithError(err).Errorf("Schema encode message failed %s", msg.Value)
