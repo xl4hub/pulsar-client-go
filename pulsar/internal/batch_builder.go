@@ -35,6 +35,7 @@ type BuffersPool interface {
 // BatcherBuilderProvider defines func which returns the BatchBuilder.
 type BatcherBuilderProvider func(
 	maxMessages uint, maxBatchSize uint, producerName string, producerID uint64,
+	schemaVersion []byte,
 	compressionType pb.CompressionType, level compression.Level,
 	bufferPool BuffersPool, logger log.Logger, encryptor crypto.Encryptor,
 ) (BatchBuilder, error)
@@ -85,6 +86,7 @@ type batchContainer struct {
 
 	producerName string
 	producerID   uint64
+	schemaVersion []byte
 
 	cmdSend     *pb.BaseCommand
 	msgMetadata *pb.MessageMetadata
@@ -101,6 +103,7 @@ type batchContainer struct {
 // newBatchContainer init a batchContainer
 func newBatchContainer(
 	maxMessages uint, maxBatchSize uint, producerName string, producerID uint64,
+	schemaVersion []byte,
 	compressionType pb.CompressionType, level compression.Level,
 	bufferPool BuffersPool, logger log.Logger, encryptor crypto.Encryptor,
 ) batchContainer {
@@ -112,6 +115,7 @@ func newBatchContainer(
 		maxBatchSize: maxBatchSize,
 		producerName: producerName,
 		producerID:   producerID,
+		schemaVersion: schemaVersion,
 		cmdSend: baseCommand(
 			pb.BaseCommand_SEND,
 			&pb.CommandSend{
@@ -138,12 +142,14 @@ func newBatchContainer(
 // NewBatchBuilder init batch builder and return BatchBuilder pointer. Build a new batch message container.
 func NewBatchBuilder(
 	maxMessages uint, maxBatchSize uint, producerName string, producerID uint64,
+	schemaVersion []byte,
 	compressionType pb.CompressionType, level compression.Level,
 	bufferPool BuffersPool, logger log.Logger, encryptor crypto.Encryptor,
 ) (BatchBuilder, error) {
 
 	bc := newBatchContainer(
-		maxMessages, maxBatchSize, producerName, producerID, compressionType,
+		maxMessages, maxBatchSize, producerName, producerID, schemaVersion,
+		compressionType,
 		level, bufferPool, logger, encryptor,
 	)
 
@@ -191,6 +197,7 @@ func (bc *batchContainer) Add(
 		bc.msgMetadata.ProducerName = &bc.producerName
 		bc.msgMetadata.ReplicateTo = replicateTo
 		bc.msgMetadata.PartitionKey = metadata.PartitionKey
+		bc.msgMetadata.SchemaVersion = bc.schemaVersion
 
 		if deliverAt.UnixNano() > 0 {
 			bc.msgMetadata.DeliverAtTime = proto.Int64(int64(TimestampMillis(deliverAt)))
@@ -198,6 +205,7 @@ func (bc *batchContainer) Add(
 
 		bc.cmdSend.Send.SequenceId = proto.Uint64(sequenceID)
 	}
+	bc.log.Infof("Add metaSize=%d, data=%s payld=[% x]", metadata.Size(), metadata.String(), payload)
 	addSingleMessageToBatch(bc.buffer, metadata, payload)
 
 	bc.numMessages++
