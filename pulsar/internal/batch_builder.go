@@ -50,6 +50,7 @@ type BatchBuilder interface {
 		metadata *pb.SingleMessageMetadata, sequenceIDGenerator *uint64,
 		payload []byte,
 		callback interface{}, replicateTo []string, deliverAt time.Time,
+		publishTime time.Time,
 	) bool
 
 	// Flush all the messages buffered in the client and wait until all messages have been successfully persisted.
@@ -172,6 +173,7 @@ func (bc *batchContainer) Add(
 	metadata *pb.SingleMessageMetadata, sequenceIDGenerator *uint64,
 	payload []byte,
 	callback interface{}, replicateTo []string, deliverAt time.Time,
+	publishTime time.Time,
 ) bool {
 	if replicateTo != nil && bc.numMessages != 0 {
 		// If the current batch is not empty and we're trying to set the replication clusters,
@@ -194,7 +196,11 @@ func (bc *batchContainer) Add(
 			sequenceID = GetAndAdd(sequenceIDGenerator, 1)
 		}
 		bc.msgMetadata.SequenceId = proto.Uint64(sequenceID)
-		bc.msgMetadata.PublishTime = proto.Uint64(TimestampMillis(time.Now()))
+		if publishTime.UnixNano() != 0 {
+			bc.msgMetadata.PublishTime = proto.Uint64(TimestampMillis(publishTime))
+		} else {
+			bc.msgMetadata.PublishTime = proto.Uint64(TimestampMillis(time.Now()))
+		}
 		bc.msgMetadata.ProducerName = &bc.producerName
 		bc.msgMetadata.ReplicateTo = replicateTo
 		bc.msgMetadata.PartitionKey = metadata.PartitionKey

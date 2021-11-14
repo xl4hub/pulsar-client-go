@@ -38,6 +38,13 @@ type ProducerMessage struct {
 	// Properties attach application defined properties on the message
 	Properties map[string]string
 
+	// XL4: PublishTime set the publish time for a given message
+	// By default, messages are time stamped by the client
+	// the publish time must always be present.
+	// The publish time is used to limit the data processed
+	// when using SQL queries
+	PublishTime time.Time
+
 	// EventTime set the event time for a given message
 	// By default, messages don't have an event time associated, while the publish
 	// time will be be always present.
