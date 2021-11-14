@@ -126,7 +126,7 @@ func (bc *keyBasedBatchContainer) hasSpace(payload []byte) bool {
 func (bc *keyBasedBatchContainer) Add(
 	metadata *pb.SingleMessageMetadata, sequenceIDGenerator *uint64,
 	payload []byte,
-	callback interface{}, replicateTo []string, deliverAt time.Time,
+	callback interface{}, replicateTo []string, deliverAt time.Time, publishTime time.Time,
 ) bool {
 	if replicateTo != nil && bc.numMessages != 0 {
 		// If the current batch is not empty and we're trying to set the replication clusters,
@@ -157,7 +157,7 @@ func (bc *keyBasedBatchContainer) Add(
 	// add message to batch container
 	batchPart.Add(
 		metadata, sequenceIDGenerator, payload, callback, replicateTo,
-		deliverAt,
+		deliverAt, publishTime,
 	)
 	addSingleMessageToBatch(bc.buffer, metadata, payload)
 

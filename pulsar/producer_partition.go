@@ -482,7 +482,7 @@ func (p *partitionProducer) internalSend(request *sendRequest) {
 	}
 
 	added := p.batchBuilder.Add(smm, p.sequenceIDGenerator, payload, request,
-		msg.ReplicationClusters, deliverAt)
+		msg.ReplicationClusters, deliverAt, msg.PublishTime)
 	if !added {
 		// The current batch is full.. flush it and retry
 		if p.batchBuilder.IsMultiBatches() {
@@ -493,7 +493,7 @@ func (p *partitionProducer) internalSend(request *sendRequest) {
 
 		// after flushing try again to add the current payload
 		if ok := p.batchBuilder.Add(smm, p.sequenceIDGenerator, payload, request,
-			msg.ReplicationClusters, deliverAt); !ok {
+			msg.ReplicationClusters, deliverAt, msg.PublishTime); !ok {
 			p.publishSemaphore.Release()
 			request.callback(nil, request.msg, errFailAddToBatch)
 			p.log.WithField("size", len(payload)).
