@@ -49,7 +49,7 @@ type BatchBuilder interface {
 	Add(
 		metadata *pb.SingleMessageMetadata, sequenceIDGenerator *uint64,
 		payload []byte,
-		callback interface{}, replicateTo []string, deliverAt time.Time,
+		callback interface{}, replicateTo []string, deliverAt time.Time, publishTime time.Time,
 		schemaVersion []byte, multiSchemaEnabled bool,
 		useTxn bool,
 		mostSigBits uint64,
@@ -186,7 +186,7 @@ func (bc *batchContainer) hasSameSchema(schemaVersion []byte) bool {
 func (bc *batchContainer) Add(
 	metadata *pb.SingleMessageMetadata, sequenceIDGenerator *uint64,
 	payload []byte,
-	callback interface{}, replicateTo []string, deliverAt time.Time,
+	callback interface{}, replicateTo []string, deliverAt time.Time, publishTime time.Time,
 	schemaVersion []byte, multiSchemaEnabled bool,
 	useTxn bool, mostSigBits uint64, leastSigBits uint64,
 ) bool {
@@ -215,7 +215,11 @@ func (bc *batchContainer) Add(
 			sequenceID = GetAndAdd(sequenceIDGenerator, 1)
 		}
 		bc.msgMetadata.SequenceId = proto.Uint64(sequenceID)
-		bc.msgMetadata.PublishTime = proto.Uint64(TimestampMillis(time.Now()))
+		if publishTime.IsZero() {
+			bc.msgMetadata.PublishTime = proto.Uint64(TimestampMillis(time.Now()))
+		} else {
+			bc.msgMetadata.PublishTime = proto.Uint64(TimestampMillis(publishTime))
+		}
 		bc.msgMetadata.ProducerName = &bc.producerName
 		bc.msgMetadata.ReplicateTo = replicateTo
 		bc.msgMetadata.PartitionKey = metadata.PartitionKey
@@ -232,6 +236,7 @@ func (bc *batchContainer) Add(
 			bc.cmdSend.Send.TxnidLeastBits = proto.Uint64(leastSigBits)
 		}
 	}
+	bc.log.Debugf("Add metaSize=%d, data=%s payld=[% x]", metadata.GetPayloadSize(), metadata.String(), payload)
 	addSingleMessageToBatch(bc.buffer, metadata, payload)
 
 	bc.numMessages++

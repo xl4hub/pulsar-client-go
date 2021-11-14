@@ -726,7 +726,7 @@ func addRequestToBatch(smm *pb.SingleMessageMetadata, p *partitionProducer,
 	}
 
 	return p.batchBuilder.Add(smm, p.sequenceIDGenerator, uncompressedPayload, request,
-		msg.ReplicationClusters, deliverAt, schemaVersion, multiSchemaEnabled, useTxn, mostSigBits,
+		msg.ReplicationClusters, deliverAt, msg.PublishTime, schemaVersion, multiSchemaEnabled, useTxn, mostSigBits,
 		leastSigBits)
 }
 

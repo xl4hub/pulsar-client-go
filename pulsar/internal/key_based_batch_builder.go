@@ -130,7 +130,7 @@ func (bc *keyBasedBatchContainer) hasSpace(payload []byte) bool {
 func (bc *keyBasedBatchContainer) Add(
 	metadata *pb.SingleMessageMetadata, sequenceIDGenerator *uint64,
 	payload []byte,
-	callback interface{}, replicateTo []string, deliverAt time.Time,
+	callback interface{}, replicateTo []string, deliverAt time.Time, publishTime time.Time,
 	schemaVersion []byte, multiSchemaEnabled bool,
 	useTxn bool,
 	mostSigBits uint64,
@@ -164,7 +164,7 @@ func (bc *keyBasedBatchContainer) Add(
 	// add message to batch container
 	add := batchPart.Add(
 		metadata, sequenceIDGenerator, payload, callback, replicateTo,
-		deliverAt,
+		deliverAt, publishTime,
 		schemaVersion, multiSchemaEnabled, useTxn, mostSigBits, leastSigBits,
 	)
 	if !add {
