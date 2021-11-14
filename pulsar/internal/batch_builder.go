@@ -196,10 +196,10 @@ func (bc *batchContainer) Add(
 			sequenceID = GetAndAdd(sequenceIDGenerator, 1)
 		}
 		bc.msgMetadata.SequenceId = proto.Uint64(sequenceID)
-		if publishTime.UnixNano() != 0 {
-			bc.msgMetadata.PublishTime = proto.Uint64(TimestampMillis(publishTime))
-		} else {
+		if publishTime.IsZero() {
 			bc.msgMetadata.PublishTime = proto.Uint64(TimestampMillis(time.Now()))
+		} else {
+			bc.msgMetadata.PublishTime = proto.Uint64(TimestampMillis(publishTime))
 		}
 		bc.msgMetadata.ProducerName = &bc.producerName
 		bc.msgMetadata.ReplicateTo = replicateTo
