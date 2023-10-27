@@ -733,9 +733,13 @@ func addRequestToBatch(smm *pb.SingleMessageMetadata, p *partitionProducer,
 func (p *partitionProducer) genMetadata(msg *ProducerMessage,
 	uncompressedSize int,
 	deliverAt time.Time) (mm *pb.MessageMetadata) {
+	pubTime := msg.PublishTime
+	if pubTime.IsZero() {
+		pubTime = time.Now()
+	}
 	mm = &pb.MessageMetadata{
 		ProducerName:     &p.producerName,
-		PublishTime:      proto.Uint64(internal.TimestampMillis(time.Now())),
+		PublishTime:      proto.Uint64(internal.TimestampMillis(pubTime)),
 		ReplicateTo:      msg.ReplicationClusters,
 		UncompressedSize: proto.Uint32(uint32(uncompressedSize)),
 	}
@@ -1177,6 +1181,11 @@ func (p *partitionProducer) internalSendAsync(ctx context.Context, msg *Producer
 	// bc only works when DisableBlockIfQueueFull is false
 	bc := make(chan struct{})
 
+	pubTime := msg.PublishTime
+	if pubTime.IsZero() {
+		pubTime = time.Now()
+	}
+
 	// callbackOnce make sure the callback is only invoked once in chunking
 	callbackOnce := &sync.Once{}
 	sr := &sendRequest{
@@ -1185,7 +1194,7 @@ func (p *partitionProducer) internalSendAsync(ctx context.Context, msg *Producer
 		callback:         newCallback,
 		callbackOnce:     callbackOnce,
 		flushImmediately: flushImmediately,
-		publishTime:      time.Now(),
+		publishTime:      pubTime,
 		blockCh:          bc,
 		closeBlockChOnce: &sync.Once{},
 		transaction:      txn,
